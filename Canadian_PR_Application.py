@@ -1,14 +1,8 @@
-﻿import streamlit as st
+import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 import requests
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import time
 # email_alert.py
@@ -16,6 +10,8 @@ import smtplib
 # email_alert.py
 import smtplib
 from email.message import EmailMessage
+import xml.etree.ElementTree as ET
+import os
 
 # Send alert email using Gmail (App password required)
 def send_alert_email(to_email, subject, body):
@@ -34,75 +30,32 @@ def send_alert_email(to_email, subject, body):
         print(f"Email send error: {e}")
         return False
 
-def get_latest_draw():
-    url = "https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/policies-operational-instructions-agreements/ministerial-instructions/express-entry-rounds.html"
 
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=1920x1080")
-
-    service = Service(service = Service("C:/Users/sukri/Desktop/PR Predictive model/chromedriver.exe"))  # Replace if needed with full path
-    driver = webdriver.Chrome(service=service, options=options)
-
+def check_for_new_draw_from_csv(csv_url=r"C:\Users\sukri\Desktop\PR Predictive model\ircc_draw_history.csv"):
     try:
-        driver.get(url)
-        # ✅ Wait until the draw table is loaded
-        WebDriverWait(driver, 10).until(
-           EC.presence_of_element_located((By.CSS_SELECTOR, "table tbody tr"))
-        )
+        # Step 1: Read the latest row from the CSV
+        df = pd.read_csv(csv_url)
+        latest_row = df.iloc[0]
+        draw_id = f"{latest_row['Date']}|{latest_row['CRS Score']}|{latest_row['Type']}|{latest_row['Invitations Issued']}"
 
-        # Now the table should be present
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-        table = soup.find("table")
+        # Step 2: Compare to last seen
+        last_seen = ""
+        if os.path.exists("last_draw.txt"):
+            with open("last_draw.txt", "r", encoding="utf-8") as f:
+                last_seen = f.read().strip()
 
-        if not table:
-            return None, "⚠️ Table not found, draw might not be available yet."
+        is_new = draw_id != last_seen
 
-        rows = table.find_all("tr")
-        if len(rows) < 2:
-            return None, "⚠️ No rows found in draw table."
+        # Step 3: Update last_draw.txt if new
+        if is_new:
+            with open("last_draw.txt", "w", encoding="utf-8") as f:
+                f.write(draw_id)
 
-        first_row = rows[1].find_all("td")
-        if len(first_row) < 4:
-            return None, "⚠️ Incomplete data for the latest draw."
-
-        date = first_row[1].text.strip()
-        round_type = first_row[2].text.strip()
-        invitations = first_row[3].text.strip()
-        crs = first_row[4].text.strip()
-
-        result = f"""📅 Date: {date}
-📄 Type: {round_type}
-📨 Invitations: {invitations}
-🎯 CRS Score: {crs}"""
-
-        return result, None  # ✅ draw data + no error
+        return is_new
 
     except Exception as e:
-        return None, f"⚠️ An error occurred: {e}"
-    finally:
-        driver.quit()
-
-def check_for_new_draw(draw_text):
-    last_seen = ""  # always define first
-
-    try:
-        with open("last_draw.txt", "r", encoding="utf-8") as f:
-            last_seen = f.read().strip()
-    except FileNotFoundError:
-        pass  # file will be created after first draw
-
-    is_new = draw_text.strip() != last_seen
-
-    if is_new:
-        try:
-            with open("last_draw.txt", "w", encoding="utf-8") as f:
-                f.write(draw_text.strip())
-        except Exception as e:
-            print(f"❗ Failed to update draw file: {e}")
-
-    return is_new
+        print(f"❌ Error checking for new draw: {e}")
+        return False
     
 # ------------------------
 # Simulated cutoff data (based on 2023 IRCC reports)
@@ -114,14 +67,14 @@ cutoffs = {
     "CEC-Healthcare": 450,
     "CEC-French": 422,
     "CEC-Trades": 420,
-    "CEC-Education": 435,
+    "CEC-Education": 479,
     "CEC-Agriculture": 392,
     "FSWP-General": 541,
     "FSWP-STEM": 486,
     "FSWP-Healthcare": 450,
     "FSWP-French": 422,
     "FSWP-Trades": 420,
-    "FSWP-Education": 435,
+    "FSWP-Education": 479,
     "FSWP-Agriculture": 392,
     "FSTP-General": 541,
     "FSTP-Trades": 420
@@ -232,19 +185,22 @@ else:
 
     # Latest IRCC draw info
     st.subheader("📅 Latest IRCC Draw Info")
-  
-    
-    # Step 1: Scrape latest draw (your working function)
-draw_info, error = get_latest_draw()
-
-if error:
-    st.error(error)
-    st.stop()  # Prevents app from falsely updating or sending alerts
 
 # If new draw is detected — notify all subscribers
-if check_for_new_draw(draw_info):
+csv_url = r"C:\Users\sukri\Desktop\PR Predictive model\ircc_draw_history.csv"
+df = pd.read_csv(csv_url)
+
+# Use only the most recent draw
+latest_row = df.iloc[0]
+draw_summary = f"""📅 Date: {latest_row['Date']}
+📄 Type: {latest_row['Type']}
+🎯 CRS Score: {latest_row['CRS Score']}
+📨 Invitations Issued: {latest_row['Invitations']}"""
+
+# Check if it's a new draw
+if check_for_new_draw_from_csv(csv_url):
     st.warning("🚨 New Express Entry Draw Detected!")
-    st.info(draw_info)
+    st.info(draw_summary)
 
     try:
         with open("subscribers.txt", "r", encoding="utf-8") as f:
@@ -254,52 +210,57 @@ if check_for_new_draw(draw_info):
 
     for email in subscribers:
         subject = "🚨 New Express Entry Draw Published"
-        message = f"A new Express Entry draw has just been released:\n\n{draw_info}"
+        message = f"A new Express Entry draw has just been released:\n\n{draw_summary}"
         send_alert_email(email, subject, message)
+
 else:
     st.success("✅ You're up to date. No new draw yet.")
-    st.info(draw_info)
-    
+    st.info(draw_summary)
+
+    st.subheader("🔍 Filter by Draw Type")
+selected_type = st.selectbox("Choose a draw type:", df["Type"].unique())
+filtered_df = df[df["Type"] == selected_type]
+st.dataframe(filtered_df.reset_index(drop=True))
+
+# --- Email subscription section ---
 st.subheader("📬 Sign Up for Email Alerts")
 user_email = st.text_input("Enter your email for draw alerts:")
-
 
 cleaned_email = user_email.strip().lower()
 
 if cleaned_email == "":
-        st.warning("Please enter your email address.")
+    st.warning("Please enter your email address.")
 elif "@" not in cleaned_email or "." not in cleaned_email:
-        st.warning("Please enter a valid email format.")
+    st.warning("Please enter a valid email format.")
 else:
-        # ✅ Continue with safe subscription check
-        try:
-            with open("subscribers.txt", "r", encoding="utf-8") as f:
-                subscribers = [line.strip().lower() for line in f.readlines()]
-        except FileNotFoundError:
-            subscribers = []
+    try:
+        with open("subscribers.txt", "r", encoding="utf-8") as f:
+            subscribers = [line.strip().lower() for line in f.readlines()]
+    except FileNotFoundError:
+        subscribers = []
 
-        if cleaned_email in subscribers:
-            st.info("📌 You're already subscribed.")
+    if cleaned_email in subscribers:
+        st.info("📌 You're already subscribed.")
+    else:
+        with open("subscribers.txt", "a", encoding="utf-8") as f:
+            f.write(cleaned_email + "\n")
+
+        welcome_message = (
+            "Welcome to Express Entry Alerts!\n\n"
+            "You'll now get an email every time a new draw is released by IRCC.\n\n"
+            "📊 Current Draw:\n\n" + draw_summary +
+            f"\n\nTo unsubscribe, click here:\nhttp://localhost:8501?unsubscribe={cleaned_email}"
+        )
+
+        sent = send_alert_email(
+            to_email=cleaned_email,
+            subject="✅ You're Subscribed to Express Entry Alerts",
+            body=welcome_message
+        )
+
+        if sent:
+            st.success("✅ You're subscribed! A welcome email has been sent.")
         else:
-            with open("subscribers.txt", "a", encoding="utf-8") as f:
-                f.write(cleaned_email + "\\n")
-
-            welcome_message = (
-                "Welcome to Express Entry Alerts!\n\n"
-                "You'll now get an email every time a new draw is released by IRCC.\n\n"
-                "📊 Current Draw:\n\n" + draw_info +
-                f"\n\nTo unsubscribe, click here:\nhttp://localhost:8501?unsubscribe={cleaned_email}"
-            )
-
-            sent = send_alert_email(
-                to_email=cleaned_email,
-                subject="✅ You're Subscribed to Express Entry Alerts",
-                body=welcome_message
-            )
-
-            if sent:
-                st.success("✅ You're subscribed! A welcome email has been sent.")
-            else:
-                st.error("❌ Email failed to send.")
+            st.error("❌ Email failed to send.")
 st.markdown("---")
 st.caption("🍁 Built for future Canadians. Based on historic IRCC draw data. Educational use only.")
