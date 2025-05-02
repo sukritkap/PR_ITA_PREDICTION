@@ -31,7 +31,7 @@ def send_alert_email(to_email, subject, body):
         return False
 
 
-def check_for_new_draw_from_csv(csv_url=r"C:\Users\sukri\Desktop\PR Predictive model\ircc_draw_history.csv"):
+def check_for_new_draw_from_csv(csv_url="https://raw.githubusercontent.com/sukritkap/IRCC_CSV/refs/heads/main/ircc_draw_history.csv"):
     try:
         # Step 1: Read the latest row from the CSV
         df = pd.read_csv(csv_url)
@@ -187,7 +187,7 @@ else:
     st.subheader("📅 Latest IRCC Draw Info")
 
 # If new draw is detected — notify all subscribers
-csv_url = r"C:\Users\sukri\Desktop\PR Predictive model\ircc_draw_history.csv"
+csv_url = "https://raw.githubusercontent.com/sukritkap/IRCC_CSV/refs/heads/main/ircc_draw_history.csv"
 df = pd.read_csv(csv_url)
 
 # Use only the most recent draw
