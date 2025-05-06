@@ -14,6 +14,8 @@ options = Options()
 options.add_argument("--headless")
 options.add_argument("--disable-gpu")
 options.add_argument("--window-size=1920,1080")
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
 
 chromedriver_path = os.path.join(os.path.dirname(__file__), "chromedriver.exe")
 service = Service(chromedriver_path)
