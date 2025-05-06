@@ -19,7 +19,7 @@ chromedriver_path = os.path.join(os.path.dirname(__file__), "chromedriver.exe")
 service = Service(chromedriver_path)
 driver = webdriver.Chrome(service=service, options=options)
 
-url = "https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/policies-operational-instructions-agreements/ministerial-instructions/express-entry-rounds.html"
+url ="https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/policies-operational-instructions-agreements/ministerial-instructions/express-entry-rounds.html"
 driver.get(url)
 
 try:
