@@ -16,25 +16,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          wget \
-          unzip \
-          libnss3 \
-          libxss1 \
-          libasound2 \
-          libatk-bridge2.0-0 \
-          libgtk-3-0 \
-          libgbm-dev \
-          libxshmfence-dev \
-          fonts-liberation \
-          xdg-utils \
-          libu2f-udev \
-          libvulkan1
+        python-version: '3.11'
 
     - name: Download Chrome for Testing and ChromeDriver
       run: |
