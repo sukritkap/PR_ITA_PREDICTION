@@ -18,6 +18,15 @@ jobs:
       with:
         python-version: '3.11'
 
+    - name: Symlink Google Chrome if not present
+      run: |
+         if [ ! -e /usr/bin/google-chrome ]; then
+         sudo ln -s $PWD/chrome-linux64/chrome /usr/bin/google-chrome
+         else
+         echo "google-chrome already exists at /usr/bin/google-chrome"
+         fi
+
+  
     - name: Download Chrome for Testing and ChromeDriver
       run: |
         mkdir -p /opt/chrome
@@ -41,8 +50,6 @@ jobs:
 
     - name: Commit updated CSV
       run: |
-        git config --global user.email "you@example.com"
-        git config --global user.name "Your Name"
         git add data/ircc_draw_history.csv
         git commit -m "🤖 Auto-update IRCC draws"
         git push
