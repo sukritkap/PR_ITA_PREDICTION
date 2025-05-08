@@ -36,7 +36,7 @@ def check_for_new_draw_from_csv(csv_url="https://raw.githubusercontent.com/sukri
         # Step 1: Read the latest row from the CSV
         df = pd.read_csv(csv_url)
         latest_row = df.iloc[0]
-        draw_id = f"{latest_row['Date']}|{latest_row['CRS Score']}|{latest_row['Type']}|{latest_row['Invitations Issued']}"
+        draw_id = f"{latest_row['Date']}|{latest_row['CRS Score']}|{latest_row['Type']}|{latest_row['Invitations']}"
 
         # Step 2: Compare to last seen
         last_seen = ""
