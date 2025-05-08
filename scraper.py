@@ -7,21 +7,20 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
-import os
 
 # Set up Selenium with headless Chrome
 options = Options()
 options.add_argument("--headless")
-options.add_argument("--disable-gpu")
-options.add_argument("--window-size=1920,1080")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
+options.add_argument("--disable-gpu")
+options.add_argument("--window-size=1920,1080")
 
-chromedriver_path = os.path.join(os.path.dirname(__file__), "chromedriver.exe")
-service = Service(chromedriver_path)
-driver = webdriver.Chrome(service=service, options=options)
+# ✅ Don't specify chromedriver path — let Selenium handle it
+driver = webdriver.Chrome(options=options)
 
-url ="https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/policies-operational-instructions-agreements/ministerial-instructions/express-entry-rounds.html"
+# Continue with your scraping logic...
+url = "https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/policies-operational-instructions-agreements/ministerial-instructions/express-entry-rounds.html"
 driver.get(url)
 
 try:
@@ -34,7 +33,7 @@ try:
     rows = table.find_all("tr")
 
     all_draws = []
-    for row in rows[1:]:  # skip header
+    for row in rows[1:]:
         cols = row.find_all("td")
         if len(cols) >= 5:
             draw = {
@@ -48,10 +47,10 @@ try:
 
     df = pd.DataFrame(all_draws)
     df.to_csv("ircc_draw_history.csv", index=False)
-    print("✅ All historical draw data saved to ircc_draw_history.csv")
+    print("✅ Data saved to ircc_draw_history.csv")
 
 except Exception as e:
-    print("❌ Error while scraping:", e)
+    print("❌ Scraping error:", e)
 
 finally:
     driver.quit()
