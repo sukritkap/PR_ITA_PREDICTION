@@ -34,15 +34,19 @@ jobs:
     - name: Commit and push CSV if changed
       env:
         GH_PAT: ${{ secrets.GH_PAT }}
+        REPO: ${{ github.repository }}
       run: |
         git config --global user.email "github-actions@github.com"
         git config --global user.name "GitHub Actions"
+
+        git remote rm origin
+        git remote add origin https://x-access-token:${GH_PAT}@github.com/${REPO}
+
         git add ircc_draw_history.csv
 
         if git diff --cached --quiet; then
           echo "No changes to commit."
         else
           git commit -m "🔄 Auto-update IRCC draw data"
-          git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}
           git push origin HEAD:main
         fi
