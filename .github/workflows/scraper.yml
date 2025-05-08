@@ -37,10 +37,14 @@ jobs:
 
         python scraper.py
 
-    - name: Push to repository
-      uses: ad-m/github-push-action@v0.6.0
-      with:
-        github_token: ${{ secrets.GH_PAT }}
-        branch: main
-        commit_message: "🔄 Auto-update IRCC draw data"
-        file_pattern: ircc_draw_history.csv
+    - name: Commit and Push CSV if Changed
+      env:
+        GH_PAT: ${{ secrets.GH_PAT }}
+      run: |
+        git config --global user.email "github-actions@github.com"
+        git config --global user.name "GitHub Actions"
+        git add ircc_draw_history.csv
+        git diff --cached --quiet || git commit -m "🔄 Auto-update IRCC draw data"
+
+        git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}
+        git push origin HEAD:main 
