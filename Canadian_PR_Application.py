@@ -18,12 +18,12 @@ def send_alert_email(to_email, subject, body):
     msg = EmailMessage()
     msg.set_content(body)
     msg['Subject'] = subject
-    msg['From'] = 'sk.sukrit.kapoor@gmail.com'  # Replace with your email
+    msg['From'] = st.secrets['EMAIL_USER']  
     msg['To'] = to_email
 
     try:
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-            smtp.login('sk.sukrit.kapoor@gmail.com', 'gbjwdemnyddulwht')  # Replace with your app password
+            smtp.login(st.secrets['EMAIL_USER'], st.secrets['EMAIL_PASS'])  
             smtp.send_message(msg)
         return True
     except Exception as e:
